@@ -155,7 +155,10 @@ def add_line_chart(ws):
     chart.x_axis.title = "月"
     chart.height = 10  # 単位はcm
     chart.width = 20
-
+    # openpyxlの既知の落とし穴対策:これを明示しないと
+    # Excelで軸の目盛りラベル(金額・月)が非表示になることがある
+    chart.x_axis.delete = False
+    chart.y_axis.delete = False
     # データ範囲:見出し行(1行目)を含めて指定し、titles_from_data=True で
     # 1行目を系列名(凡例の「大阪支店」など)として使う
     data = Reference(
@@ -166,8 +169,13 @@ def add_line_chart(ws):
     categories = Reference(
         ws, min_col=1, min_row=2, max_row=last_data_row,
     )
+    
     chart.add_data(data, titles_from_data=True)
     chart.set_categories(categories)
+    # スムージングを無効化:曲線補間は実データにない起伏を描いて
+    # 誤解を招くため、業務レポートでは点を直線で結ぶ
+    for series in chart.series:
+        series.smooth = False
 
     # 表の右隣(G2セルの位置)に配置
     ws.add_chart(chart, "G2")
